@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            html, body {
+                height: 100%;
+                padding: 0;
+                margin: 0;
+            }
+            #map {
+                /* configure the size of the map */
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" integrity="sha512-Zcn6bjR/8RZbLEpLIeOwNtzREBAJnUKESxces60Mpoj+2okopSAcSUIUOseddDm0cxnGQzxIR7vJgsLZbdLE3w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    </head>
+    <body>
+        <div id="map"></div>
+        <script>
+            // initialize Leaflet
+            var map = L.map('map')
+
+            // add the OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+            }).addTo(map);
+
+            // show the scale bar on the lower left corner
+            L.control.scale().addTo(map);
+
+            var markers = {};
+
+            map.on('click', async function(e){
+                var cadastral = await getCadastralByCoords(e.latlng.lat, e.latlng.lng)
+                cadastral = cadastral.features[0]
+                var building = await getBuildingById(cadastral.attrs.id)
+                building = building.feature
+                console.log(building)
+                
+                var marker_id = Date.now()
+                markers[marker_id] = L.marker(e.latlng).addTo(map).bindPopup(`Год постройки: ${building.attrs.year_built||building.attrs.year_used}`).openPopup()
+                setTimeout(function(){map.removeLayer(markers[marker_id])}, 10000)
+            })
+            
+
+            function onSuccessGeolocation({ coords }){
+                const { latitude, longitude } = coords
+                const position = [latitude, longitude]
+                map.setView(position, 20)
+            }
+
+            function onFailureGeolocation({ message }){
+                alert(message)
+            }
+            
+            map.setView([55.7422, 37.5719], 20);
+
+            navigator.geolocation.getCurrentPosition(onSuccessGeolocation, onFailureGeolocation, {
+            // высокая точность
+            enableHighAccuracy: true
+            })
+
+            async function getCadastralByCoords(lat, lon){
+                return fetch(`https://pkk.rosreestr.ru/api/features/5?text=${lat}%20${lon}&limit=11&tolerance=2`).then(response => response.json())
+            }
+
+            async function getBuildingById(id){
+                return fetch(`https://pkk.rosreestr.ru/api/features/5/${id}`).then(response => response.json())
+            }
+
+        </script>
+    </body>
+</html>
