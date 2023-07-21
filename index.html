@@ -12,6 +12,15 @@
                 width: 100%;
                 height: 100%;
             }
+            .leaflet-control {
+                font-size: 24px;
+            }
+            .leaflet-control-zoom-out {
+                font-size: 36px;
+            }
+            .leaflet-control-zoom-in {
+                font-size: 36px;
+            }
         </style>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" integrity="sha512-Zcn6bjR/8RZbLEpLIeOwNtzREBAJnUKESxces60Mpoj+2okopSAcSUIUOseddDm0cxnGQzxIR7vJgsLZbdLE3w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -23,9 +32,9 @@
             var map = L.map('map')
 
             // add the OpenStreetMap tiles
-            var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap contributors</a>'
+            var tileLayer = L.tileLayer('http://{s}.google.com/vt?lyrs=s,h&x={x}&y={y}&z={z}',{
+                maxZoom: 20,
+                subdomains:['mt0','mt1','mt2','mt3']
             })
 
             tileLayer.addTo(map);
@@ -38,7 +47,12 @@
             map.on('click', async function(e){
                 var cadastral = await getCadastralByCoords(e.latlng.lat, e.latlng.lng)
                 cadastral = cadastral.features[0]
-                var building = await getBuildingById(cadastral.attrs.id)
+                try {
+                    var building = await getBuildingById(cadastral.attrs.id)
+                } catch {
+                    console.log(cadastral)
+                }
+                
                 building = building.feature
                 console.log(building)
                 
